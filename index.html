@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      background: rgb(55, 141, 101);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    table {
+      box-shadow: 3px 3px 10px 0.1px rgb(0, 0, 0, 0.5);
+    }
+    td {
+      background: rgb(196, 178, 73);
+      width: 100px;
+      height: 100px;
+      text-align: center;
+      font-size: 55px;
+      color: white;
+      transition: .2s;
+    }
+    td:hover {
+      opacity: 0.8;
+    }
+    td:active {
+      background: rgb(27, 70, 50);
+    }
+    td:visited {
+      background: rgb(27, 70, 50);
+    }
+    span {
+      font-size: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div id="tableWrap">
+    <table id="table">
+    </table>
+  </div>
+  <table id="turnBox"> 
+    <tr>
+      <td id="turnX">X<br><span>선공</span></td>
+      <td id="turnO">O<br><span>후공</span></td>
+    </tr>
+  </table>
+  <div id="result"></div>
+<script>
+  const $table = document.querySelector('#table');
+  const $turnBox = document.querySelector('#turnBox');
+  const $turnO = document.querySelector('#turnO');
+  const $turnX = document.querySelector('#turnX');
+  const $result = document.querySelector('#result');
+  let turn;
+  let myTurn;
+  let computerTurn;
+  const rows = [];
+
+  for (let i = 0; i < 3; i++) { // 3x3 테이블 생성 코드 ()
+    const $tr = document.createElement(`tr`);
+    const cells = [];
+      for (let n = 0; n < 3; n++) {
+        const $td = document.createElement('td');
+        $tr.append($td);
+        cells.push($td);
+      }
+    rows.push(cells);
+    $table.append($tr);
+  };
+
+  const checkWinner = (target) => {  // 승리 여부 검사 코드
+    let rowIndex;// 클릭칸의 행 위치
+    let cellIndex; // 클릭칸의 열 위치
+    rows.forEach((row, ri) => { // 배열안에 3개의 행을 도는 반복문 매개변수는 (아이템, 인덱스)
+      row.forEach((cell, ci) => { // 각 행 안에 3개의 셀을 도는 반복문 
+        if (cell === target) { // 클릭 위치가 셀과 같다면 (위치값 저장을 위한 조건문)
+          rowIndex = ri; // 행 인덱스의 위치 저장
+          cellIndex = ci; // 열 인덱스의 위치 저장
+        }
+      });
+    });
+    let hasWinner = false;
+    if (
+      rows[rowIndex][0].textContent === myTurn &&
+      rows[rowIndex][1].textContent === myTurn &&
+      rows[rowIndex][2].textContent === myTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][cellIndex].textContent === myTurn &&
+      rows[1][cellIndex].textContent === myTurn &&
+      rows[2][cellIndex].textContent === myTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][0].textContent === myTurn &&
+      rows[1][1].textContent === myTurn &&
+      rows[2][2].textContent === myTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][2].textContent === myTurn &&
+      rows[1][1].textContent === myTurn &&
+      rows[2][0].textContent === myTurn
+    ) {
+      hasWinner = true;
+    };
+    return hasWinner
+  };
+
+  const callback = () => { // 클릭 이벤트 코드
+    if (!turn) { // 턴의 값이 비어있을때
+      alert('턴을 선택하세요') 
+    } else if (turn === myTurn) { // 턴이 내 턴일때
+      if (event.target.textContent) {  // 빈 칸이 아닐때
+        alert('빈 칸을 선택하세요!')
+      } else if (!event.target.textContent) { // 빈칸일때
+        event.target.textContent = myTurn; // 자신의 문양을 체크하고
+        if (checkWinner(event.target)) { // 승리일 경우
+          $result.textContent = `승리!`; 
+          $table.removeEventListener('click', callback);
+          return;
+        }
+        let draw = true; // 빈칸 체크한 시점 일단 무승부라고 가정
+        rows.forEach((row) => { // 행을 돌면서 칸이 다 차있는지 탐색
+          row.forEach((cell) => { // 열을 돌면서 칸이 다 차있는지 탐색
+            if (!cell.textContent) { // 만약 셀에 내용이 없는곳을 찾았을경우
+              draw = false; // 무승부에 false를 보내서 무승부 유효화
+            }
+          });
+        });
+        if (draw) {  // 위 조건문에서 내용이 없는 셀을 못찾아 true가 반환되면 무승부로 판단
+          $result.textContent = '무승부!'; 
+          $table.removeEventListener('click', callback);
+          return;
+        }
+        turn = computerTurn; // 턴을 컴퓨터 턴으로 넘김
+        computer();
+      };
+    } else if (turn === computerTurn) {
+      alert('당신의 턴이 아닙니다 기다리세요')
+    }
+  };
+
+  const checkComputerWinner = (target) => {  // 컴퓨터 승리 여부 검사 
+    let rowIndex;// 클릭칸의 행 위치
+    let cellIndex; // 클릭칸의 열 위치
+    rows.forEach((row, ri) => { // 배열안에 3개의 행을 도는 반복문 매개변수는 (아이템, 인덱스)
+      row.forEach((cell, ci) => { // 각 행 안에 3개의 셀을 도는 반복문 
+        if (cell === target) { // 클릭 위치가 셀과 같다면 (위치값 저장을 위한 조건문)
+          rowIndex = ri; // 행 인덱스의 위치 저장
+          cellIndex = ci; // 열 인덱스의 위치 저장
+        }
+      });
+    });
+    let hasWinner = false;
+    if (
+      rows[rowIndex][0].textContent === computerTurn &&
+      rows[rowIndex][1].textContent === computerTurn &&
+      rows[rowIndex][2].textContent === computerTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][cellIndex].textContent === computerTurn &&
+      rows[1][cellIndex].textContent === computerTurn &&
+      rows[2][cellIndex].textContent === computerTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][0].textContent === computerTurn &&
+      rows[1][1].textContent === computerTurn &&
+      rows[2][2].textContent === computerTurn
+    ) {
+      hasWinner = true;
+    };
+    if (
+      rows[0][2].textContent === computerTurn &&
+      rows[1][1].textContent === computerTurn &&
+      rows[2][0].textContent === computerTurn
+    ) {
+      hasWinner = true;
+    };
+    return hasWinner
+  };
+
+  const computer = () => { // 컴퓨터 상호작용 코드
+    setTimeout(() => {
+      const emptyCells = rows.flat().filter((v) => !v.textContent);
+      const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      randomCell.textContent = computerTurn;
+      turn = myTurn;
+      if (checkComputerWinner(randomCell)) {
+        $result.textContent = `패배!`;
+        $table.removeEventListener('click', callback);
+        return;
+      }
+    }, 500)
+  };
+    // 빈 칸을 찾는 코드
+        // reduce로 빈값을 찾아서 매개변수로 넣고
+        // 조건문으로 그 변수를 대상으로 난수를 생성해 대입한뒤에
+        // 대입 결과에 컴퓨터 문양 체크
+    // 찾은 칸에 자신의 문양을 체크 하는 코드 *
+    // 승리 여부를 판단하는 코드 *
+    // 무승부 여부를 판단하는 코드 *
+    // 턴을 넘기는 코드 *
+
+
+
+  const chooseTurnX = () => { // x턴 정하고 턴박스 삭제하는 코드
+    if (!turn) {
+      myTurn = 'X';
+      computerTurn = 'O';
+      turn = myTurn;
+      $turnX.removeEventListener('click', chooseTurnX);
+      $turnO.removeEventListener('click', chooseTurnO);
+      $turnBox.remove();
+    } 
+  };
+  const chooseTurnO = () => { // o턴 정하고 턴박스 삭제하는 코드 (리팩처링은 나중에)
+    if (!turn) {
+      myTurn = 'O';
+      computerTurn = 'X';
+      turn = computerTurn;
+      computer();
+      $turnX.removeEventListener('click', chooseTurnX);
+      $turnO.removeEventListener('click', chooseTurnO);
+      $turnBox.remove();
+    }
+  };
+  $table.addEventListener('click', callback);
+  $turnX.addEventListener('click', chooseTurnX);
+  $turnO.addEventListener('click', chooseTurnO);
+</script>
+</body>
+</html>
